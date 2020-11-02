@@ -1,0 +1,93 @@
+<template>
+  <div class="file-upload">
+    <div class="file-upload-container" @click="handleUpload" v-bind="$attrs">
+      <slot v-if="fileStatus==='loading'" name="loading">
+        <button class="btn btn-primary" disabled>正在上传...</button>
+      </slot>
+      <slot v-else-if="fileStatus==='success'" name="success" :fileData="fileData">
+        <button class="btn btn-primary" disabled>上传成功</button>
+      </slot>
+      <slot v-else name="default">
+        <button class="btn btn-primary">上传文件</button>
+      </slot>
+    </div>
+    <input
+      ref="fileRef"
+      type="file"
+      class="d-none"
+      @change="handleFileInput"
+    >
+  </div>
+</template>
+<script lang="ts">
+import { defineComponent, PropType, ref } from 'vue'
+import axios from 'axios'
+type UploadStatus = 'ready' | 'loading' | 'success' | 'error'
+type BeforeUploadType = (file: File) => boolean // 定义beforeUpload类型，在传入该属性时更加规范
+// 实现清除文件
+export default defineComponent({
+  props: {
+    action: {
+      type: String,
+      required: true
+    },
+    beforeUpload: { // 用于用户在上传之前自定义检查文件
+      type: Function as PropType<BeforeUploadType>
+    }
+  },
+  inheritAttrs: false, // 这个属性，可以把添加在子组件上属性，不放在该组件的最外层的元素上，然后使用v-bind="$attrs",把属性放在你想放的元素上
+  emits: ['file-upload-success', 'file-upload-error'],
+  setup (props, context) {
+    const fileRef = ref<null | HTMLInputElement>(null)
+    const fileStatus = ref<UploadStatus>('ready')
+    const fileData = ref({})
+    const handleFileInput = (e: Event) => {
+      const currentTarget = e.target as HTMLInputElement // 断言才能使用其中的属性不报错
+      if (currentTarget.files) {
+        const formData = new FormData()
+        const files = Array.from(currentTarget.files)
+        if (props.beforeUpload) {
+          const beforeUploadResult = props.beforeUpload(files[0])
+          if (!beforeUploadResult) {
+            return
+          }
+        }
+        fileStatus.value = 'loading'
+        formData.append('file', files[0])
+        axios.post(props.action, formData, {
+          headers: {
+            'Content-Type': 'multipart/form-data'
+          }
+        }).then(res => {
+          if (res.data.codeText === 'OK') {
+            fileStatus.value = 'success'
+            fileData.value = JSON.parse(JSON.stringify(res.data.data))
+            context.emit('file-upload-success', res.data)
+          } else {
+            fileStatus.value = 'error'
+            context.emit('file-upload-error', res.data)
+          }
+        }).finally(() => {
+          if (fileRef.value) {
+            // 最后需要把input的value值清空
+            fileRef.value.value = ''
+          }
+        })
+      }
+    }
+    const handleUpload = () => {
+      console.log(0)
+      if (fileRef.value) {
+        fileRef.value.click()
+      }
+    }
+    return {
+      fileRef,
+      fileData,
+      handleFileInput,
+      handleUpload,
+      fileStatus
+    }
+  }
+})
+</script>
