@@ -1,4 +1,4 @@
-# zhihu
+# person column
 
 ## Project setup
 ```
