@@ -4,16 +4,18 @@
     <loader v-if="isLoading" text="拼命加载中"></loader>
     <!-- <message v-if="error.status" :message="error.msg.codeText"></message> -->
     <router-view></router-view>
-     <footer class="text-center py-4 text-secondary bg-light mt-6">
-      <small>
-        <ul class="list-inline mb-0">
-          <li class="list-inline-item">© 2020 者也专栏</li>
-          <li class="list-inline-item">课程</li>
-          <li class="list-inline-item">文档</li>
-          <li class="list-inline-item">联系</li>
-          <li class="list-inline-item">更多</li>
-        </ul>
-      </small>
+     <footer class="mt-4">
+       <div class="text-center py-4 text-secondary bg-light mt-4">
+        <small>
+          <ul class="list-inline mb-0">
+            <li class="list-inline-item">© 2020</li>
+            <li class="list-inline-item">课程</li>
+            <li class="list-inline-item">文档</li>
+            <li class="list-inline-item">联系</li>
+            <li class="list-inline-item">更多</li>
+          </ul>
+        </small>
+       </div>
     </footer>
   </div>
 </template>

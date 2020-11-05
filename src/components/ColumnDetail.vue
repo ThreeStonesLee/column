@@ -2,7 +2,7 @@
   <div class="column-detail-page w-75 mx-auto">
     <div class="column-info row mb-4 border-bottom pb-4 align-items-center" v-if="column">
       <div class="col-3 text-center">
-        <img :src="column.avatar" :alt="column.title" class="rounded-circle border w-100">
+        <img :src="column.image && column.image.path" :alt="column.title" class="rounded-circle border w-100">
       </div>
       <div class="col-9">
         <h4>{{column.title}}</h4>
@@ -28,15 +28,15 @@ export default defineComponent({
     const route = useRoute()
     const store = useStore()
     const columnId = +route.params.id
-    console.log(route.params)
+    // console.log(route.params)
     onMounted(() => {
       store.dispatch('fetchColumn', columnId)
       store.dispatch('fetchPostList', columnId)
     })
     const column = computed(() => store.getters.getColumn(columnId))
     const postList = computed(() => store.state.posts)
-    console.log(column)
-    console.log(postList)
+    // console.log(column)
+    // console.log(postList)
     return {
       column,
       postList

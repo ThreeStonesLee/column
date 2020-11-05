@@ -1,12 +1,10 @@
 <template>
   <div class="create-post-page">
-    <h4>{{isEditMode ? '编辑文章' : '新建文章'}}</h4>
     <upload
       action="/file/upload"
       :beforeUpload="beforeUpload"
       @file-upload-success="uploadSuccess"
       @file-uplaod-error="uploadError"
-      :uploaded="img"
       class="d-flex align-items-center justify-content-center bg-light text-secondary w-100 my-4"
     >
     <h2>点击上传图片</h2>
@@ -24,40 +22,34 @@
     </upload>
     <validate-form @form-submit="onFormSubmit">
       <div class="mb-3">
-        <label class="form-label">所属专栏</label>
-        <select class="form-select" v-model="selectedColumn">
-          <option v-for="column in columnList" :key="column.column_id" :value="column.column_id">{{ column.title }}</option>
-        </select>
-      </div>
-      <div class="mb-3">
-        <label class="form-label">文章标题</label>
+        <label class="form-label">专栏标题</label>
         <validate-input
           v-model="titleRef"
           :rules="titleRules"
-          placeholder="请输入文章标题"
+          placeholder="请输入专栏标题"
           />
       </div>
       <div class="mb-3">
-        <label class="form-label">文章内容</label>
+        <label class="form-label">专栏说明</label>
         <validate-input
           tag="textarea"
           v-model="contentRef"
           :rules="contentRules"
-          placeholder="请输入文章内容"
+          placeholder="请输入专栏说明"
         />
       </div>
       <template #submit>
-        <button class="btn  btn-danger">{{ isEditMode ? '更新' : '发表' }}</button>
+        <button class="btn  btn-danger">确定</button>
       </template>
     </validate-form>
   </div>
 </template>
 
 <script lang="ts">
-import { defineComponent, onMounted, ref } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import { defineComponent, reactive, ref } from 'vue'
+import { useRouter } from 'vue-router'
 import { useStore } from 'vuex'
-import { Response, PostProps, ImageProps } from '../store'
+import { Response, ColumnProps, ImageProps } from '../store'
 import ValidateInput, { PropRules } from '../components/ValidateInput.vue'
 import ValidateForm from '../components/ValidateForm.vue'
 import Upload from '../components/Upload.vue'
@@ -71,29 +63,18 @@ export default defineComponent({
     ValidateForm,
     Upload
   },
-  data () {
-    return {
-      columnList: []
-    }
-  },
-  /**
-   * reactive生成的对象如何赋值才能有响应式
-   */
   setup () {
     const router = useRouter()
-    const route = useRoute()
     const store = useStore()
     const titleRules: PropRules = [
-      { type: 'required', message: '文章标题不能为空！' }
+      { type: 'required', message: '专栏标题不能为空！' }
     ]
     const contentRules: PropRules = [
-      { type: 'required', message: '文章内容不能为空！' }
+      { type: 'required', message: '专栏说明不能为空！' }
     ]
     const titleRef = ref('')
     const contentRef = ref('')
-    const selectedColumn = ref()
-    const isEditMode = !!route.query.pid
-    const img = ref({
+    let img = reactive({
       filename: '',
       mimeType: '',
       originalName: '',
@@ -101,55 +82,37 @@ export default defineComponent({
       size: 0
     })
     const beforeUpload = (file: File) => {
-      const result = checkBeforeUpload(file, { format: ['image/png', 'image/jpg'], size: 10 })
+      const result = checkBeforeUpload(file, { format: ['image/png', 'image/jpg'], size: 0.5 })
       if (result.errorInfo === 'format') {
         createMessage('格式不正确，支持png,jpg格式', 'error')
       }
       if (result.errorInfo === 'size') {
-        createMessage('图片太大！', 'error')
+        createMessage('图片太大！仅能上传大小为512KB', 'error')
       }
       return result.passed
     }
     const uploadSuccess = (data: Response<ImageProps>) => {
       if (data.data) {
-        img.value = data.data
+        img = data.data
       }
     }
     const uploadError = (data: Response) => {
       createMessage(JSON.stringify(data), 'error')
     }
-    onMounted(() => { // 为啥要在onMounted中执行？
-      if (isEditMode) {
-        axios.get(`/post/postInfo/${route.query.pid}`).then(res => {
-          if (res.data.codeText === 'OK') {
-            const postInfo = res.data.data
-            titleRef.value = postInfo.title
-            contentRef.value = postInfo.content
-            img.value = postInfo.image
-            selectedColumn.value = postInfo.column_id
-          }
-        })
-      }
-    })
     const onFormSubmit = (res: boolean) => {
       if (res) {
-        const newPost: PostProps = {
+        const newColumn: ColumnProps = {
           title: titleRef.value,
-          content: contentRef.value,
-          image: img.value,
-          // eslint-disable-next-line @typescript-eslint/camelcase
-          column_id: selectedColumn.value
+          description: contentRef.value,
+          image: img
         }
-        const method = isEditMode ? 'updatePost' : 'addNewPost'
-        const params = isEditMode ? {
-          // eslint-disable-next-line @typescript-eslint/camelcase
-          id: route.query.pid,
-          updateData: newPost
-        } : newPost
-        store.dispatch(method, params).then(res => {
-          console.log(res)
-          if (res.codeText === 'OK') {
-            router.push({ name: 'column', params: { id: selectedColumn.value } })
+        axios.post('/column/createColumn', newColumn).then(res => {
+          const { data } = res
+          if (data.codeText === 'OK') {
+            createMessage('创建成功！', 'success')
+            router.push({ name: 'home' })
+          } else {
+            createMessage(data.codeText, 'success')
           }
         })
       }
@@ -163,22 +126,7 @@ export default defineComponent({
       onFormSubmit,
       beforeUpload,
       uploadSuccess,
-      uploadError,
-      selectedColumn,
-      img,
-      isEditMode
-    }
-  },
-  created () {
-    this.getColumnList()
-  },
-  methods: {
-    getColumnList () {
-      axios.get('/column/getColumnList').then(res => {
-        if (res.data.codeText === 'OK') {
-          this.columnList = res.data.data
-        }
-      })
+      uploadError
     }
   }
 })

@@ -7,6 +7,8 @@ import Login from './views/Login.vue'
 import ColumnDetail from './components/ColumnDetail.vue'
 import CreatePost from './components/CreatePost.vue'
 import Register from './views/Register.vue'
+import CreateColumn from './components/CreateColumn.vue'
+import PostDetail from './components/PostDetail.vue'
 const routes = [
   {
     path: '/',
@@ -32,10 +34,23 @@ const routes = [
     }
   },
   {
+    path: '/create_column',
+    name: 'createColumn',
+    component: CreateColumn,
+    meta: {
+      requiredLogin: true
+    }
+  },
+  {
     path: '/register',
     name: 'register',
     component: Register,
     meta: { redirectAlreadyLogin: true }
+  },
+  {
+    path: '/postDetail/:pid',
+    name: 'postDetail',
+    component: PostDetail
   }
 ]
 const routerHistory = createWebHashHistory()

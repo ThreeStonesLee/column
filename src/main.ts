@@ -11,7 +11,7 @@ axios.interceptors.request.use(config => {
   store.commit('setError', { status: false, msg: config.data })
   return config
 })
-console.log(localStorage.getItem('token'))
+// console.log(localStorage.getItem('token'))
 axios.interceptors.response.use(config => {
   store.commit('setLoading', false)
   // console.log(config)
@@ -24,6 +24,9 @@ axios.interceptors.response.use(config => {
 })
 
 const app = createApp(App)
+app.config.globalProperties.$axios = axios
+app.config.globalProperties.foo = 'bar'
 app.use(router)
 app.use(store)
+// app.config.performance = true
 app.mount('#app')

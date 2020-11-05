@@ -1,11 +1,11 @@
 <template>
   <div class="post-list">
-    <article v-for="post in list" :key="post._id" class="card mb-3 shadow-sm">
+    <article v-for="post in list" :key="post.post_id" class="card mb-3 shadow-sm">
       <div class="card-body">
-        <h4>{{post.title}}</h4>
+        <h4  @click="gotoDetail(post.post_id)" style="cursor: pointer;">{{post.title}}</h4>
         <div class="row my-3 align-items-center">
           <div v-if="post.image" class="col-4">
-            <img :src="post.image" :alt="post.title" class="rounded-lg w-100">
+            <img :src="post.image.path" :alt="post.title" class="rounded-lg w-100">
           </div>
           <p :class="{'col-8': post.image}" class="text-muted">{{post.content}}</p>
         </div>
@@ -24,7 +24,16 @@ export default defineComponent({
       // required: true,
       type: Array as PropType<PostProps[]>
     }
+  },
+  methods: {
+    gotoDetail (pid: number) {
+      this.$router.push({
+        name: 'postDetail',
+        params: {
+          pid
+        }
+      })
+    }
   }
-
 })
 </script>

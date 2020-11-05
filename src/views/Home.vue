@@ -28,7 +28,7 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, computed, onMounted } from 'vue'
+import { defineComponent, computed, onMounted, ref } from 'vue'
 import { useStore } from 'vuex'
 import ColumnList from '../components/ColumnList.vue'
 import Upload from '../components/Upload.vue'
@@ -40,7 +40,7 @@ export default defineComponent({
     ColumnList,
     Upload
   },
-  setup () {
+  setup (props, context) {
     const store = useStore<GlobalDataProps>()
     const list = computed(() => store.state.columns)
     const beforeUpload = (file: File) => {
@@ -61,6 +61,10 @@ export default defineComponent({
       beforeUpload,
       uploadSuccess
     }
+  },
+  mounted () {
+    // console.log(this)
+    // console.log(this.foo)
   }
 })
 </script>

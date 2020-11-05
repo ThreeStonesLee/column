@@ -1,9 +1,9 @@
 import { createStore, Commit } from 'vuex'
-import axios from 'axios'
+import axios, { AxiosRequestConfig } from 'axios'
 export interface User {
   isLogin: boolean;
   name?: string;
-  id?: number;
+  user_id?: number;
   avator?: string;
   columnId?: number;
 }
@@ -17,23 +17,25 @@ export interface Response<T = {}> {
 }
 
 export interface ImageProps {
-  _id?: string;
-  path?: string;
+  filename: string;
+  mimeType: string;
+  originalName: string;
+  path: string;
+  size: number;
 }
 export interface ColumnProps {
-  _id: number;
+  column_id?: number;
   title: string;
-  avatar?: ImageProps;
+  image?: ImageProps;
   description: string;
 }
 
 export interface PostProps {
-  _id: number;
+  post_id?: string | number;
   title: string;
   content: string;
   image?: ImageProps;
-  createdAt: string;
-  columnId: number;
+  column_id: number;
 }
 
 export interface GlobalErrorProps {
@@ -58,6 +60,13 @@ const postAndCommit = async (url: string, mutationName: string, commit: Commit, 
 
 const getAndCommit = async (url: string, mutationName: string, commit: Commit) => {
   const { data } = await axios.get(url)
+  commit(mutationName, data)
+  return data
+}
+// 重构请求函数
+
+const asyncAndCommit = async (url: string, mutationName: string, commit: Commit, config: AxiosRequestConfig = { method: 'get' }) => {
+  const { data } = await axios(url, config)
   commit(mutationName, data)
   return data
 }
@@ -102,6 +111,16 @@ const store = createStore<GlobalDataProps>({
       state.posts = payload
       // console.log(payload)
     },
+    updatePost (state, { data }) {
+      console.log(data)
+      state.posts = state.posts.map(post => {
+        if (data.post_id === post.post_id) {
+          return data
+        } else {
+          return post
+        }
+      })
+    },
     setLoading (state, status) {
       state.loading = status
     },
@@ -133,13 +152,22 @@ const store = createStore<GlobalDataProps>({
     },
     fetchPostList (context, cid) {
       const params = {
-        column: cid
+        // eslint-disable-next-line @typescript-eslint/camelcase
+        column_id: cid
       }
       axios.post('/post/postList', params).then(res => {
         // console.log(res)
         if (res.data.codeText === 'OK') {
           context.commit('fetchPostList', res.data.data)
         }
+      })
+    },
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    updatePost ({ commit }, { id, updateData: data }) {
+      // eslint-disable-next-line @typescript-eslint/camelcase
+      return asyncAndCommit(`/post/postUpdate/${id}`, 'updatePost', commit, {
+        method: 'patch',
+        data
       })
     },
     login ({ commit }, payload) {
@@ -153,12 +181,15 @@ const store = createStore<GlobalDataProps>({
       return dispatch('login', loginData).then(() => {
         return dispatch('fetchCurrentUser')
       })
+    },
+    addNewPost ({ commit }, params) {
+      return postAndCommit('/post/createPost', '', commit, params)
     }
   },
   getters: {
     // 访问getters是使用属性方式访问(state.getters.propName)，如果是调用传入值的话，则需要返回一个函数
     getColumn (state) {
-      return (id: number) => state.columns.find(column => column._id === id)
+      return (id: number) => state.columns.find(column => column.column_id === id)
     }
     // getPostList (state) {
     //   return state.posts
