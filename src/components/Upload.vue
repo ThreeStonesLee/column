@@ -47,12 +47,15 @@ export default defineComponent({
    */
   setup (props, context) {
     const fileRef = ref<null | HTMLInputElement>(null)
-    const fileStatus = ref<UploadStatus>(props.uploaded ? 'success' : 'ready') // 用户传入文件数据，并改变起状态
+    const fileStatus = ref<UploadStatus>(props.uploaded && !!props.uploaded.path ? 'success' : 'ready') // 用户传入文件数据，并改变起状态
     const fileData = ref(props.uploaded)
+    console.log(props.uploaded)
     // 对于会改变的数据还是需要watch来追踪其改变
     watch(() => props.uploaded, (newVal) => {
-      fileStatus.value = 'success'
-      fileData.value = newVal
+      if (newVal && newVal.path) {
+        fileStatus.value = 'success'
+        fileData.value = newVal
+      }
     })
     const handleFileInput = (e: Event) => {
       const currentTarget = e.target as HTMLInputElement // 断言才能使用其中的属性不报错

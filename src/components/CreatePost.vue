@@ -111,6 +111,7 @@ export default defineComponent({
       return result.passed
     }
     const uploadSuccess = (data: Response<ImageProps>) => {
+      console.log('success')
       if (data.data) {
         img.value = data.data
       }
